@@ -1,30 +1,81 @@
 package com.quinobo.jack.service;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.UUID;
 
-import javax.annotation.Resource;
-
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileCopyUtils;
 
 @Service
 public class FileService {
 	
-	@Resource(name = "uploadPath")
-	private String uploadPath;
+	private final String UPLOAD_PATH;
 	
 	public FileService() {
-		// TODO Auto-generated constructor stub
+		UPLOAD_PATH = getHomeDir() + "/files/";
+		makeFolder();
 	}
 
+	/**
+	 * 현재의 홈 디렉토리 경로를 반환함
+	 * @return 현재 디렉토리 경로의 홈 디렉토리
+	 */
+	private String getHomeDir() {
+		String urls = null;
+		try {
+			urls = new ClassPathResource("com/quinobo/jack/service/FileService.class").getURI().getPath();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		String homeDir = urls.substring(0,urls.lastIndexOf("/WEB-INF/classes/com/quinobo/jack/service/FileService.class"));
+		return homeDir;
+	}
+	
+	/**
+	 * 해당 위치에 폴더가 없을 경우 생성함
+	 * 
+	 */
+	private void makeFolder() {
+		File Folder = new File(UPLOAD_PATH);
+		if (!Folder.exists()) {
+			try{
+			    Folder.mkdir(); //폴더 생성합니다.
+			    System.out.println("폴더가 생성되었습니다.");
+		        } 
+		        catch(Exception e){
+			    e.getStackTrace();
+			}        
+	         }else {
+			System.out.println("이미 폴더가 생성되어 있습니다.");
+		}
+	}
+
+	/**
+	 * 파일 업로드
+	 * @param originalName 올린 파일의 이름
+	 * @param fileData 올릴 파일
+	 * @return savedName 저장된 이름
+	 * @throws Exception
+	 */
 	public String uploadFile(String originalName, byte[] fileData) throws Exception {
 		UUID uid = UUID.randomUUID();
 		String savedName = uid.toString() + originalName.substring(originalName.lastIndexOf(".")); //확장자만 추출해서 붙임.
-		File target = new File(uploadPath, savedName);
+		File target = new File(UPLOAD_PATH, savedName);
 		FileCopyUtils.copy(fileData, target);
 		return savedName;
-		//https://wanna-b.tistory.com/7 참조
 	}
+
+	/**
+	 * 파일 업로드 경로 반환
+	 * @return UPLOAD_PATH : 각 파일이 각납될 경로
+	 */
+	public String getUPLOAD_PATH() {
+		return UPLOAD_PATH;
+	}
+	
+	
 	
 }

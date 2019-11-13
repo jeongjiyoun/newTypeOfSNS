@@ -43,8 +43,9 @@ public class AdminController extends AdminBaseController implements Constants {
 	@Autowired
 	BoardService bs;
 	
-	@Resource(name = "uploadPath")
-	private String uploadPath;	
+	/*
+	 * @Resource(name = "uploadPath") private String uploadPath;
+	 */
 	
 	@RequestMapping(value = "/", method = RequestMethod.GET)
 	public String home() {
@@ -74,14 +75,23 @@ public class AdminController extends AdminBaseController implements Constants {
 	public String edit_npc(String extra, Model model) {
 		NpcEntity npcEntity = bs.selectNpcDetail(extra, TABLE_NPC);
 		model.addAttribute("npcEntity",npcEntity);
-		model.addAttribute("uploadPath", uploadPath);
+		model.addAttribute("uploadPath", fs.getUPLOAD_PATH());
 		return "admin/npc/npcEdit";
 	}
 	@RequestMapping(value = "/npcEdit", method = RequestMethod.POST)
 	public String npcEdit(@RequestParam(defaultValue="null")MultipartFile pic, String name, String comment, Model model, HttpSession session) {
+
 		/**
+		 * 11/14
 		 * 여기부터 내일 작업하면 됩니다.
-		 * 11/13문제사항 : 사진파일이 보이지 않음.
+		 * npc 수정
+		 * 수정시 기존 사진파일 삭제처리, 사진 첨부/미첨부 확인 후 분기작업
+		 * 
+		 * npc 작성
+		 * 이름 공란일 경우 경고메시지 후 되돌림
+		 * 
+		 * npc 삭제
+		 * 기능 구현(버튼에 기능 삽입)
 		 */
 		return "redirect:/unyonyazal/npc_Admin";
 	}
