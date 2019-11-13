@@ -1,0 +1,13 @@
+
+.classpath
+.project
+*.prefs
+*.component
+*.bak
+*.mwb
+.springBeans
+*.xml
+*.jar
+*.class
+*.properties
+*.MF
