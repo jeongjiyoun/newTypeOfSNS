@@ -28,7 +28,7 @@ public class ConnectionTest implements InitializingBean {
 	public void afterPropertiesSet() throws SQLException {
 		// run the actual test
 		connection = dataSource.getConnection();
-		connection.setAutoCommit(false);
+		connection.setAutoCommit(true);
 		stmt = connection.createStatement();
 	}
 

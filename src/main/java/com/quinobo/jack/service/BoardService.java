@@ -37,7 +37,9 @@ public class BoardService implements Constants {
 		case TABLE_NPC:
 			Map<String, String> map = new HashMap<String, String>();
 			map.put("select", "count(*)");
-			map.put("keyword", keyword);
+			if(keyword != null) {
+				map.put("keyword", keyword);
+			}
 			map.put("tableFlag", tableFlag);
 			String sql = sc.sqlSelectCreate(map);
 			num = connect.excuteSingleQuery(sql);
@@ -72,12 +74,17 @@ public class BoardService implements Constants {
 
 	public boolean insertNpc(Map<String, String> map, String tableNpc) {
 		String sql = sc.sqlInsertCreate(map, TABLE_NPC);
-		ConnectionTest connect = new ConnectionTest();
 		int i = connect.executeUpdate(sql);
 		connect.connectCommit();
 		return isOk(i);
 	}
 
+	public boolean updateNPC(Map<String, String> map,String npno) {
+		String sql = sc.sqlUpdateCreate(map, npno, TABLE_NPC);
+		int i = connect.executeUpdate(sql);
+		return isOk(i);
+	}
+	
 	private boolean isOk(int i) {
 		if (i != 0) { 
 			return true;
@@ -104,4 +111,11 @@ public class BoardService implements Constants {
 		result.setWdate((records.get(0)[5]));
 		return result;
 	}
+
+	public boolean deleteNPC(String npno) {
+		String sql = sc.sqlDeleteCreate(npno, TABLE_NPC);
+		int i = connect.executeUpdate(sql);
+		return isOk(i);
+	}
+
 }

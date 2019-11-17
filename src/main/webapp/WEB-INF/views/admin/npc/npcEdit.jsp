@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
     pageEncoding="UTF-8"%>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib prefix="c"  uri="http://java.sun.com/jsp/jstl/core" %>
+
 <!doctype html>
 <html lang="kr">
 	<head>
@@ -56,9 +57,17 @@
 <main>
 	<header></header>
 	<section id="home">
-	    <h1>NPC 등록</h1>
-		<p>NPC를 등록할 수 있습니다. 여기서 등록된 NPC는 직전 화면의 NPC목록에서 확인할 수 있습니다. 주의사항 : NPC등록시에 <strong>이름은 필수 항목</strong>입니다.</p>
-
+		 <c:choose>
+		 	<c:when test="${npcEntity != null}">
+				<h1>NPC 편집</h1>
+				<p>NPC를 편집할 수 있습니다. NPC정보의 경우, 유저에게는 이름과 사진만 표시됩니다. 코멘트란에는 1500자까지 입력할 수 있습니다. 코멘트란에는 NPC에 대해 자유롭게 기술해주세요. 여기서 등록된 NPC는 NPC목록에서 확인할 수 있습니다. 주의사항 : NPC등록시에 <strong>이름은 필수 항목</strong>입니다.</p>
+		 	</c:when>
+		 	<c:when test="${empty npcEntity}">
+				<h1>NPC 등록</h1>
+				<p>NPC를 등록할 수 있습니다. NPC정보의 경우, 유저에게는 이름과 사진만 표시됩니다. 코멘트란에는 1500자까지 입력할 수 있습니다. 코멘트란에는 NPC에 대해 자유롭게 기술해주세요. 여기서 등록된 NPC는 NPC목록에서 확인할 수 있습니다. 주의사항 : NPC등록시에 <strong>이름은 필수 항목</strong>입니다.</p>
+		 	</c:when>
+		 </c:choose>
+	   <p style="color:red">${message}</p>
 <form id="npcForm" method="post" enctype="multipart/form-data">		
 <table class="tbl_type" border="1" cellspacing="0" summary="npc정보입니다." style="width:100%;">
 	<colgroup>
@@ -77,29 +86,47 @@
 		<tr>
 			<td rowspan="6" class="ranking" scope="row" style="height: 200px; padding:10px;">
 				<div id='View_area' style='width: 180px; height: 200px; min-height:165px; margin-bottom: 5px; color: black; border: 0px solid black; dispaly: inline; '>
-				<img src="${uploadPath}${npcEntity.pic_Link}" id="picture">
+					<c:if test="${npcEntity.npno != null }">
+						<input type="hidden" name="npno" id="npno" value="${npcEntity.npno}">
+						<input type="hidden" name="isPicAlter" id="isPicAlter">
+					</c:if>
+					<c:if test="${not empty npcEntity.pic_Link}"><img src="${uploadPath}${npcEntity.pic_Link}" id="picture"></c:if>
 				</div>
 				<div class="file_input">
-					<label> 사진 교체
+					<label> 
+					<c:choose>
+						<c:when test="${empty npcEntity.pic_Link}">사진 등록</c:when>
+						<c:when test="${not empty npcEntity.pic_Link}">사진 교체</c:when>
+					</c:choose>
 				        <input type="file" onchange="previewImage(this,'View_area')" name="pic" id="profile_pt" multiple="multiple">
 				    </label>
 			    </div>
 			</td>
 			<td rowspan="1"><strong>이름</strong></td>
-			<td rowspan="1" ><input type="text" name="name" style="width:96%; height: 25px; padding-top:2px; border: none;" value="${npcEntity.name}"></td>
+			<td rowspan="1" ><input type="text" name="name" style="width:96%; height: 25px; padding-top:2px; border: none;" value="<c:out value ="${npcEntity.name}"/>"></td>
 		</tr>
 		<tr>
 		</tr>
 		<tr>
 			<td rowspan="2"><strong>설명</strong></td>
-			<td rowspan="2"><textarea name="comment" rows="1" cols="1" style="width: 96%; height: 200px; border: none; overflow:none;">${npcEntity.memo}</textarea></td>
+			<td rowspan="2"><textarea name="comment" rows="1" cols="1" style="width: 96%; height: 190px; border: none; overflow:none;" id="memo"><c:out value ="${npcEntity.memo}"/></textarea>
+			<div id="countNum">0</div>
+			</td>
+			
 		</tr>
 	</tbody>
 	<tfoot>
 	<tr>
 	 <td colspan="3" style="padding: 10px;">
-	 	<button class="button darkGrey" id="editNPC">수정</button>
-	 	<button class="button darkGrey" id="delNPC">삭제</button>
+	 <c:choose>
+	 	<c:when test="${empty npcEntity}">
+	 		<button class="button darkGrey" id="newNPC">등록</button>
+	 	</c:when>
+	 	<c:when test="${not empty npcEntity}">
+		 	<button class="button darkGrey" id="editNPC">수정</button>
+		 	<button class="button darkGrey" id="delNPC">삭제</button>
+	 	</c:when>
+	 </c:choose>
 	 </td>
 	</tr>
 	</tfoot>
@@ -109,17 +136,51 @@
 </main>
 
 <script>
+//Init
+	 var isNew = ${empty npcEntity};
+	 countWords();
+//
+	document.getElementById("memo").addEventListener("onkeydown", countWords);
 
- document.getElementById("editNPC").onclick = function() {
-	 document.getElementById("npcForm").action = "/unyonyazal/npcEdit";
-	 document.getElementById("npcForm").submit();
+	function countWords(){
+		 var content = document.getElementById("memo").value;
+		 document.getElementById("countNum").innerHTML = content.length + "/1500";
+		 if(content.length >=1500){
+			 document.getElementById("memo").value = content.substring(0,1500);
+		 } else if(content.length>=1300){
+			 document.getElementById("countNum").style.color = "red";
+		 }
+		 return;
+	 }
+
+
+
+ if(isNew){
+	 document.getElementById("newNPC").onclick = function() {
+		 document.getElementById("npcForm").action = "/unyonyazal/add_npc";
+		 document.getElementById("npcForm").submit();
+	 }
+	
+ } else {
+	 document.getElementById("editNPC").onclick = function() {
+		 document.getElementById("npcForm").action = "/unyonyazal/edit_npc";
+		 document.getElementById("npcForm").submit();
+	 }
+	 document.getElementById("delNPC").onclick = function() {
+		 if (confirm("정말 삭제하시겠습니까?") == true){    //확인
+			 document.getElementById("npcForm").action = "/unyonyazal/del_npc";
+			 document.getElementById("npcForm").submit();
+		 }else{  
+		    return false;
+		 }
+	 }
  }
-
+ 
  function previewImage(targetObj, View_area) {
-		var preview = document.getElementById(View_area); //div id
+		document.getElementById("isPicAlter").value = "true";
+	 	var preview = document.getElementById(View_area); //div id
 		var ua = window.navigator.userAgent;
-
-		document.getElementById("picture").remove();
+		
 	  //ie일때(IE8 이하에서만 작동)
 		if (ua.indexOf("MSIE") > -1) {
 			targetObj.select();
@@ -184,7 +245,6 @@
 			}
 		}
 	}
- 
 
 </script>
 </body>

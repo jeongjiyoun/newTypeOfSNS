@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
     pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+
 <!doctype html>
 <html lang="kr">
 	<head>
@@ -57,7 +58,7 @@
 	<section id="home">
 	    <h1>NPC 관리</h1>
 		<p>NPC를 추가할 수 있습니다. NPC 데이터는 조사를 위해 생성하였으나, 기타 기능에 추가적으로 사용할 수 있는 확장성을 가지고 있습니다. [신규등록] 버튼을 눌러 생성할 수 있습니다. 생성된 NPC를 눌러, 편집을 하거나 정보를 열람할 수 있습니다. 이벤트 입력을 희망하는 경우, 이쪽부터 진행해주세요.</p>
-					
+		<p>현재 검색기능은 구현되지 않았습니다.</p>		
 <table id ="npcTable" class="tbl_type" border="1" cellspacing="0" summary="npc정보입니다." style="width:100%;">
 <colgroup>
 <col>
@@ -122,10 +123,11 @@
 	<tr>
 	 <td colspan="4" style="padding: 10px;">
 	 <form id="npcForm" method="post">
-	 	<input type="text" name="keyword" placeholder="NPC이름" style="height: 20px;">
 	 	<input type="hidden" id="extra" name="extra">
 		<input type="hidden" id="curPage" name="curPage">
-	 	<button class="button darkGrey" id="searchNPC">검색</button>
+
+	 	<input type="text" id = "searchword" name="searchword" placeholder="NPC이름" style="height: 20px;">
+	 	<button class="button darkGrey" type="button" id="searchNPC">검색</button>
 		<c:if test="${sessionScope.adminId != null}">
 		<button class="button darkGrey" id="newNPC">신규등록</button>
 	 	</c:if>
@@ -141,6 +143,8 @@
 <script src="https://code.jquery.com/jquery-1.12.4.js" integrity="sha256-Qw82+bXyGq6MydymqBxNPYTaUXXq7c8v3CwiYwLLNXU=" crossorigin="anonymous"></script>
 <script>
 
+var isOk = ${not empty adminId};
+
 $(document).ready(function(){
 	   $('table tbody tr').mouseover(function(){
 	      $(this).css("backgroundColor","#f2f7ff");
@@ -153,7 +157,7 @@ $(document).ready(function(){
  $(".npc").on("click",function(){
 	 var td = $(this).children();
 	 var npno = td.eq(0).text();
-	 document.getElementById("npcForm").action = "/unyonyazal/edit_npc";
+	 document.getElementById("npcForm").action = "/unyonyazal/npcEdit";
 	 document.getElementById("extra").value = npno;
 	 document.getElementById("npcForm").submit();
  })
@@ -164,15 +168,18 @@ $(document).ready(function(){
 	 document.getElementById("curPage").value = page;
 	 document.getElementById("npcForm").submit();
   }
+ if(isOk){
+	 document.getElementById("newNPC").onclick = function() {
+		 document.getElementById("npcForm").action = "/unyonyazal/new_npc";
+		 document.getElementById("npcForm").submit();
+	 }
+ }
 
- document.getElementById("newNPC").onclick = function() {
-	 document.getElementById("npcForm").action = "/unyonyazal/new_npc";
-	 document.getElementById("npcForm").submit();
- }
  document.getElementById("searchNPC").onclick = function() {
-	 document.getElementById("npcForm").action = "/unyonyazal/npc_Admin";
-	 document.getElementById("npcForm").submit();
- }
+// 	 document.getElementById("npcForm").action = "/unyonyazal/searchNpc";
+// 	 document.getElementById("npcForm").submit();
+}
+
 
  var eventTarget = document.querySelector('.npc');
 

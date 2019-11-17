@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
@@ -18,8 +17,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.quinobo.jack.baseController.AdminBaseController;
-import com.quinobo.jack.database.ConnectionTest;
-import com.quinobo.jack.database.SqlCreater;
 import com.quinobo.jack.service.AdminService;
 import com.quinobo.jack.service.BoardService;
 import com.quinobo.jack.service.FileService;
@@ -39,14 +36,14 @@ public class AdminController extends AdminBaseController implements Constants {
 
 	@Autowired
 	FileService fs;
-	
+
 	@Autowired
 	BoardService bs;
-	
+
 	/*
 	 * @Resource(name = "uploadPath") private String uploadPath;
 	 */
-	
+
 	@RequestMapping(value = "/", method = RequestMethod.GET)
 	public String home() {
 		return "admin/login";
@@ -71,79 +68,132 @@ public class AdminController extends AdminBaseController implements Constants {
 		return "admin/main";
 	}
 
-	@RequestMapping(value = "/edit_npc", method = RequestMethod.POST)
+	@RequestMapping(value = "/npcEdit", method = RequestMethod.POST)
 	public String edit_npc(String extra, Model model) {
 		NpcEntity npcEntity = bs.selectNpcDetail(extra, TABLE_NPC);
-		model.addAttribute("npcEntity",npcEntity);
+		model.addAttribute("npcEntity", npcEntity);
 		model.addAttribute("uploadPath", fs.getUPLOAD_PATH());
 		return "admin/npc/npcEdit";
 	}
-	@RequestMapping(value = "/npcEdit", method = RequestMethod.POST)
-	public String npcEdit(@RequestParam(defaultValue="null")MultipartFile pic, String name, String comment, Model model, HttpSession session) {
 
-		/**
-		 * 11/14
-		 * 여기부터 내일 작업하면 됩니다.
-		 * npc 수정
-		 * 수정시 기존 사진파일 삭제처리, 사진 첨부/미첨부 확인 후 분기작업
-		 * 
-		 * npc 작성
-		 * 이름 공란일 경우 경고메시지 후 되돌림
-		 * 
-		 * npc 삭제
-		 * 기능 구현(버튼에 기능 삽입)
-		 */
+	@RequestMapping(value = "/edit_npc", method = RequestMethod.POST)
+	public String npcEdit(@RequestParam(defaultValue = "null") MultipartFile pic, String name, String comment,
+			Model model, HttpSession session, String npno, String isPicAlter) {
+
+		if(name == null || name.length() <1) {
+			name = session.getAttribute("adminName") + "님캐 맛집";
+			comment += "\n ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ by 잭";
+		}		
+		
+		Map<String, String> map = new HashMap<String, String>(4);
+
+		if (!pic.isEmpty()) {
+			try {
+				if("true".equals(isPicAlter)) fs.fileDupDelete(npno);
+				map.put("PIC_LINK", fs.uploadFile(pic.getOriginalFilename(), pic.getBytes()));
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		map.put("NAME", name);
+		map.put("MEMO", comment);
+		
+		bs.updateNPC(map,npno);
 		return "redirect:/unyonyazal/npc_Admin";
 	}
 	
+	@RequestMapping(value = "/del_npc", method = RequestMethod.POST)
+	public String npcDelete(String npno) {
+		
+		bs.deleteNPC(npno);
+		/**
+		 * 11/15 시험 준비에 착수해주세요.
+		 * 
+		 * npc끝!
+		 * 
+		 * 대화 올리는 창만들기. 로그창 생성!
+		 */
+		return "redirect:/unyonyazal/npc_Admin";
+	}
+
 
 	@RequestMapping(value = "/char_Admin", method = RequestMethod.GET)
 	public String goChar_Admin() {
 		return "admin/character";
 	}
-	
-	@RequestMapping(value = "/npc_Admin", method = {RequestMethod.GET, RequestMethod.POST})
-	public String goNPC_Admin(String keyword,
-            @RequestParam(defaultValue="1") int curPage,
-            Model model) {
-		
+
+	@RequestMapping(value = "/npc_Admin", method = { RequestMethod.GET, RequestMethod.POST })
+	public String npc_Admin(String keyword, @RequestParam(defaultValue = "1") int curPage, Model model) {
+
 		// 레코드의 갯수 계산
-	    int count = bs.selectBoardListCnt(keyword,TABLE_NPC);
-	    
-	    // 페이지 나누기 관련 처리
-	    PageMaker pageMaker = new PageMaker(count, curPage);
-	    List<NpcEntity> list = bs.listNPC(curPage-1, keyword);
-	    
-	    model.addAttribute("npcList", list);
-	    model.addAttribute("count", count);
-	    model.addAttribute("keyword", keyword); 
-	    model.addAttribute("pageMaker", pageMaker); 
-	    
+		int count = bs.selectBoardListCnt(keyword, TABLE_NPC);
+
+		// 페이지 나누기 관련 처리
+		PageMaker pageMaker = new PageMaker(count, curPage);
+		List<NpcEntity> list = bs.listNPC(curPage - 1, keyword);
+
+		model.addAttribute("npcList", list);
+		model.addAttribute("count", count);
+		model.addAttribute("keyword", keyword);
+		model.addAttribute("pageMaker", pageMaker);
+
+		return "admin/npc/npcMain";
+	}
+	
+	@RequestMapping(value = "/searchNpc", method = RequestMethod.POST)
+	public String npc_Search(String searchword, @RequestParam(defaultValue = "1")int curPage, Model model) {
+
+		// 레코드의 갯수 계산
+		int count = bs.selectBoardListCnt(searchword, TABLE_NPC);
+
+		// 페이지 나누기 관련 처리
+		PageMaker pageMaker = new PageMaker(count, curPage);
+		List<NpcEntity> list = bs.listNPC(curPage - 1, searchword);
+
+		model.addAttribute("npcList", list);
+		model.addAttribute("count", count);
+		model.addAttribute("keyword", searchword);
+		model.addAttribute("pageMaker", pageMaker);
+
 		return "admin/npc/npcMain";
 	}
 
+
 	@RequestMapping(value = "/new_npc", method = RequestMethod.POST)
 	public String new_npc() {
-		return "admin/npc/npcAdd";
+		return "admin/npc/npcEdit";
 	}
 
 	@RequestMapping(value = "/add_npc", method = RequestMethod.POST)
-	public String add_npc(@RequestParam(defaultValue="null")MultipartFile pic, String name, String comment, Model model, HttpSession session) throws IOException, Exception {
+	public String add_npc(@RequestParam(defaultValue = "null") MultipartFile pic,
+			String name, String comment, Model model, HttpSession session) {
+
+		if(name == null || name.length() <1) {
+			name = session.getAttribute("adminName") + "님캐 맛집";
+			comment += "\n ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ by 잭";
+		}		
+		
 		Map<String, String> map = new HashMap<String, String>(4);
-			map.put("WRITER", (String) session.getAttribute("adminId"));
-			if (pic != null) {
+		map.put("WRITER", (String) session.getAttribute("adminId"));
+		if (!pic.isEmpty()) {
+			try {
 				map.put("PIC_LINK", fs.uploadFile(pic.getOriginalFilename(), pic.getBytes()));
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
-			map.put("NAME", name);
-			map.put("MEMO", comment);
-			bs.insertNpc(map,TABLE_NPC);
-			
+		}
+		map.put("NAME", name);
+		map.put("MEMO", comment);
+		bs.insertNpc(map, TABLE_NPC);
+
 		return "redirect:/unyonyazal/npc_Admin";
 	}
 
 	@RequestMapping(value = "/event_Admin", method = RequestMethod.GET)
-	public String goEvent_Admin(
-			@RequestParam(defaultValue = "1") int curPage, HttpServletRequest request, Model model) throws Exception {
+	public String goEvent_Admin(@RequestParam(defaultValue = "1") int curPage, HttpServletRequest request, Model model)
+			throws Exception {
 
 		return "admin/event/eventMain";
 	}
