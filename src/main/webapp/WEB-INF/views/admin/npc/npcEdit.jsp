@@ -109,7 +109,7 @@
 		</tr>
 		<tr>
 			<td rowspan="2"><strong>설명</strong></td>
-			<td rowspan="2"><textarea name="comment" rows="1" cols="1" style="width: 96%; height: 190px; border: none; overflow:none;" id="memo"><c:out value ="${npcEntity.memo}"/></textarea>
+			<td rowspan="2"><textarea name="comment" rows="1" cols="1" style="width: 96%; height: 190px; border: none; overflow:none;" id="memo"></textarea>
 			<div id="countNum">0</div>
 			</td>
 			
@@ -138,10 +138,13 @@
 <script>
 //Init
 	 var isNew = ${empty npcEntity};
+	 document.getElementById("memo").value = '<c:out value ="${npcEntity.memo}"/>';
 	 countWords();
-//
-	document.getElementById("memo").addEventListener("onkeydown", countWords);
 
+//listener	 
+	 document.getElementById("memo").addEventListener("keydown", countWords);
+
+//function
 	function countWords(){
 		 var content = document.getElementById("memo").value;
 		 document.getElementById("countNum").innerHTML = content.length + "/1500";
