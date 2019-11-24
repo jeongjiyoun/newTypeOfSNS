@@ -19,17 +19,6 @@ public class BoardService implements Constants {
 	private SqlCreater sc = new SqlCreater();
 	private ConnectionTest connect = new ConnectionTest();
 
-	public boolean isInteger(String seqString) {
-		boolean isInteger = false;
-		try {
-			Integer.parseInt(seqString);
-			isInteger = true;
-		} catch (Exception e) {
-			isInteger = false;
-		}
-		return isInteger;
-	}
-
 	// 총 게시물수
 	public int selectBoardListCnt(String keyword, String tableFlag) {
 		int num = 0;
@@ -71,11 +60,10 @@ public class BoardService implements Constants {
 		}
 		return result;
 	}
-
-	public boolean insertNpc(Map<String, String> map, String tableNpc) {
+	
+	public boolean insertNpc(Map<String, String> map) {
 		String sql = sc.sqlInsertCreate(map, TABLE_NPC);
 		int i = connect.executeUpdate(sql);
-		connect.connectCommit();
 		return isOk(i);
 	}
 
@@ -85,14 +73,7 @@ public class BoardService implements Constants {
 		return isOk(i);
 	}
 	
-	private boolean isOk(int i) {
-		if (i != 0) { 
-			return true;
-		}
-		return false;
-	}
-
-	public NpcEntity selectNpcDetail(String npno, String tableFlag) {
+	public NpcEntity selectNpcDetail(String npno) {
 		NpcEntity result = new NpcEntity();
 		String sql = sc.sqlSelectDetailCreate(npno, TABLE_NPC);
 		DataTable dataTable = connect.excuteMultipleQuery(sql);
@@ -112,10 +93,64 @@ public class BoardService implements Constants {
 		return result;
 	}
 
+	public Map<String, String> selectLogDetail() {
+		Map<String, String> result = new HashMap<String, String>();
+		String sql = sc.sqlSelectDetailCreate(null, TABLE_NPC);
+		DataTable dataTable = connect.excuteMultipleQuery(sql);
+		List<String[]>records = dataTable.getRecords();
+		
+		result.put("BDNO",(records.get(0)[0]));
+		result.put("WCHAR",records.get(0)[1]);
+		result.put("CONTENTS",records.get(0)[2]);
+		result.put("WDATE",records.get(0)[3]);
+		result.put("OWNO",(records.get(0)[4]));
+		return result;
+	}
+
 	public boolean deleteNPC(String npno) {
 		String sql = sc.sqlDeleteCreate(npno, TABLE_NPC);
 		int i = connect.executeUpdate(sql);
 		return isOk(i);
 	}
 
+	public boolean insertLog(Map<String, String> map) {
+		String sql = sc.sqlInsertCreate(map, TABLE_LOG);
+		int i = connect.executeUpdate(sql);
+		return isOk(i);
+	}
+
+	public boolean insertLogPic(Map<String, String> map) {
+		String sql = sc.sqlInsertCreate(map, TABLE_LOGPIC);
+		int i = connect.executeUpdate(sql);
+		return isOk(i);
+	}
+
+	/**
+	 * int로 변형될 수 있는지 확인
+	 * @param seqString 변형을 시도할 파라미터
+	 * @return 변형 가능 여부
+	 */
+	public boolean isInteger(String seqString) {
+		boolean isInteger = false;
+		try {
+			Integer.parseInt(seqString);
+			isInteger = true;
+		} catch (Exception e) {
+			isInteger = false;
+		}
+		return isInteger;
+	}
+
+
+	/**
+	 * 삭제, 입력, 갱신의 작업에서, 작업이 성공적으로 이루어졌는지 판단하는 파라미터
+	 * @param i execute후 반환되는 int값
+	 * @return 성공 유무 boolean값
+	 */
+	private boolean isOk(int i) {
+		if (i != 0) { 
+			return true;
+		}
+		return false;
+	}
 }

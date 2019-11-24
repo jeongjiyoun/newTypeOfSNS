@@ -1,5 +1,7 @@
 package com.quinobo.jack.database;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -21,41 +23,40 @@ public class SqlCreater implements Constants {
 	 * @return sql
 	 */
 	public String sqlInsertCreate(Map<String, String> map, String table) {
+		Iterator<String> it;
+		Iterator<String> it2;
+		LocalDateTime localDateTime = LocalDateTime.now();
 		String sql = null;
 		StringBuffer sb = new StringBuffer();
 		sb.append("insert into ");
-		switch (table) {
-		case TABLE_NPC:
-			sb.append(TABLE_NPC);
-			sb.append(" ");
-			sb.append("( ");
+		sb.append(table);
+		sb.append(" ");
+		sb.append("( ");
 
-			Iterator<String> it = map.keySet().iterator();
-			while (it.hasNext()) {
-				sb.append(it.next());
-				sb.append(", ");
-			}
-			sb.append("WDATE ");
-			sb.append(") ");
-			sb.append("values ");
-			sb.append("( ");
-
-			Iterator<String> it2 = map.keySet().iterator();
-			while (it2.hasNext()) {
-				sb.append("'");
-				sb.append(map.get(it2.next()));
-				sb.append("' ");
-				sb.append(", ");
-			}
-			sb.append("now() ");
-			sb.append(") ");
-
-			break;
-
-		default:
-			break;
+		it = map.keySet().iterator();
+		while (it.hasNext()) {
+			sb.append(it.next());
+			sb.append(", ");
 		}
+		sb.append("WDATE ");
+		sb.append(") ");
+		sb.append("values ");
+		sb.append("( ");
+
+		it2 = map.keySet().iterator();
+		while (it2.hasNext()) {
+			sb.append("'");
+			sb.append(map.get(it2.next()));
+			sb.append("' ");
+			sb.append(", ");
+		}
+		sb.append("'");
+		sb.append(localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+		sb.append("'");
+		sb.append(" ) ");
 		sql = sb.toString();
+		//마지막에 일괄 로그로 대체
+		System.out.println(sql);
 		return sql;
 	}
 
@@ -82,12 +83,26 @@ public class SqlCreater implements Constants {
 			sb.append(" WHERE ");
 			sb.append("NPNO = ");
 			break;
+		case TABLE_LOG:
+			sb.append("BDNO, ");
+			sb.append("WCHAR, ");
+			sb.append("CONTENTS, ");
+			sb.append("DATE_FORMAT(WDATE, '%Y-%m-%d'), ");
+			sb.append("OWNO ");
+			sb.append("FROM ");
+			sb.append(tableFlag);
+			sb.append(" ORDER BY ");
+			sb.append("BDNO ");
+			sb.append("DESC ");
+			sb.append("LIMIT 1");
+			break;
 
 		default:
 		}
 		sb.append(orNo);
 
 		sql = sb.toString();
+		System.out.println(sql);
 		return sql;
 	}
 
@@ -120,7 +135,7 @@ public class SqlCreater implements Constants {
 		System.out.println(sql);
 		return sql;
 	}
-	
+
 	/**
 	 * select Sql 작성
 	 * @param start : 처음으로 검색할 레코드

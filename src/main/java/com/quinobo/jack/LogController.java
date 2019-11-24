@@ -3,10 +3,9 @@ package com.quinobo.jack;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
-import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -24,6 +23,9 @@ import org.springframework.web.multipart.MultipartHttpServletRequest;
 import com.google.gson.JsonObject;
 import com.quinobo.jack.service.BoardService;
 import com.quinobo.jack.service.FileService;
+import com.quinobo.jack.util.Constants;
+import com.quinobo.jack.util.PageMaker;
+import com.quinobo.jack.vo.NpcEntity;
 
 /**
  * Handles requests for the application home page.
@@ -38,43 +40,60 @@ public class LogController {
 	@Autowired
 	BoardService bs;
 
+	
+	@RequestMapping(value = "/log", method = {RequestMethod.GET, RequestMethod.POST})
+	public String logMain(String searchword, @RequestParam(defaultValue = "1") int curPage, Model model) {
+
+		// 레코드의 갯수 계산
+		int count = bs.selectBoardListCnt(searchword, Constants.TABLE_LOG);
+
+		// 페이지 나누기 관련 처리
+		PageMaker pageMaker = new PageMaker(count, curPage);
+		Map<String, String> map = bs.selectLogDetail();
+
+		model.addAttribute("log", map);
+		model.addAttribute("count", count);
+		model.addAttribute("pageMaker", pageMaker);
+
+		//go logMain Page
+		return "logs/log";
+	}
+	
+	@RequestMapping(value = "/logWrite", method = {RequestMethod.GET, RequestMethod.POST})
+	public String logWrite() {
+		//go logWrite Page
+		return "logs/logWrite";
+	}
+	
+	
+	
 	@ResponseBody
 	@RequestMapping(value = "/fileuploadLog.do", method = RequestMethod.POST)
 	public void fileuploadLog(HttpServletRequest request,String CKEditorFuncNum,HttpServletResponse response) {
 		MultipartHttpServletRequest multipartHttpServletRequest = (MultipartHttpServletRequest)request;
-		Iterator<String> iterator = multipartHttpServletRequest.getFileNames();
-		MultipartFile image = null;
-		while(iterator.hasNext()){
-			image = multipartHttpServletRequest.getFile(iterator.next());
-		}
 		
-		String originalFileName = "test.jpg";
-		String originalFileExtension = originalFileName.substring(originalFileName.lastIndexOf("."));
+		MultipartFile image = multipartHttpServletRequest.getFile("upload");
 		
-		//확장자 검사로직
-		if(originalFileExtension.toLowerCase().equals(".jpg")){
-			//jpg 파일 일경우
-		}
-		else{
-			//jpg 이외의 파일 일경우
-		}
+		String storedFileName = fs.logFileProcess(image);
+		System.out.println(storedFileName);
+		//서버에 올리기 전에 작성한 임시 경로 패스.
+		//fs.getUPLOAD_PATH() + storedFileName;
 		
-		String storedFileName = null;
-		try {
-			storedFileName = fs.uploadFile(originalFileName, image.getBytes());
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		};
-		
-		//임시 경로 패스. 나중에는 그냥 storedFileName에다가 getUPLOADPATH하면 됨.
-		String resultPath = "http://127.0.0.1/"+storedFileName;
-
 		JsonObject json = new JsonObject();
-		json.addProperty("uploaded", 1);
-		json.addProperty("filename", storedFileName);
-		json.addProperty("url", resultPath);
-		
+		if (storedFileName.contains("error")) {
+			json.addProperty("uploaded", 0);
+			JsonObject jsonError = new JsonObject();
+			jsonError.addProperty("message", storedFileName);
+			json.add("error", jsonError);
+		} else {
+			json.addProperty("uploaded", 1);
+			json.addProperty("filename", storedFileName);
+			String resultPath = "http://127.0.0.1/"+storedFileName;
+			json.addProperty("url", resultPath);
+
+		}
+		System.out.println(json.toString());
+
         PrintWriter printWriter;
 		try {
 			printWriter = response.getWriter();
@@ -89,15 +108,15 @@ public class LogController {
 
 	}
 	@RequestMapping(value = "/writeLog", method = RequestMethod.POST)
-	public String add_npc(String logData, HttpSession session) {
+	public String add_npc(String editor1, HttpSession session) {
 		String owno = (String) session.getAttribute("owno");
-		owno = "jack_Test";
+		owno = "1";
 		String wchar = (String) session.getAttribute("wchar");
 		wchar = "testJackCr";
 		Map<String, String> map = new HashMap<String, String>(4);
-		map.put("CONTENTS", logData);
-		map.put("WCHAR", wchar);
 		map.put("OWNO", owno);
+		map.put("WCHAR", wchar);
+		map.put("CONTENTS", editor1);
 		bs.insertLog(map);
 		//DB구조도 바꾸기. 사진이랑 Board랑 테이블을 분리해야함.
 		return "redirect:/";

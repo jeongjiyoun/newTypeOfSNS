@@ -1,13 +1,18 @@
 package com.quinobo.jack.service;
 
 import java.io.File;
-
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.UUID;
+
+import javax.servlet.ServletContext;
 
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileCopyUtils;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.quinobo.jack.util.Constants;
 
@@ -37,6 +42,10 @@ public class FileService implements Constants{
 		String homeDir = urls.substring(1,
 				urls.lastIndexOf("/WEB-INF/classes/com/quinobo/jack/service/FileService.class"));
 		return homeDir;
+	}
+	
+	public String getDir() {
+		return UPLOAD_PATH;
 	}
 
 	/**
@@ -86,10 +95,23 @@ public class FileService implements Constants{
 	public String getUPLOAD_PATH() {
 		return UPLOAD_PATH;
 	}
+	
+	public static String upload(ServletContext servletContext, MultipartFile multipartFile) {
+		try {
+			UUID uid = UUID.randomUUID();
+			String name = multipartFile.getOriginalFilename();
+			String fileName = uid.toString() + name.substring(name.lastIndexOf("."));
+			Path path = Paths.get(servletContext.getRealPath("/WEB-INF/uploads/" + fileName));
+			Files.write(path, multipartFile.getBytes());
+			return fileName;
+		} catch(Exception e) {
+			return null;
+		}
+	}
 
 	public void fileDupDelete(String npno) {
 		BoardService bs = new BoardService();
-		com.quinobo.jack.vo.NpcEntity npcEntity = bs.selectNpcDetail(npno, this.TABLE_NPC);
+		com.quinobo.jack.vo.NpcEntity npcEntity = bs.selectNpcDetail(npno);
 		String fileUrl = UPLOAD_PATH + npcEntity.getPic_Link();
 		File file = new File(fileUrl);
 		if (file.exists()) {
@@ -101,6 +123,44 @@ public class FileService implements Constants{
 		} else {
 			System.out.println("파일이 존재하지 않습니다.");
 		}
+	}
+	
+	private boolean isImageExten(String originalFileName) {
+		boolean result = false;
+		System.out.println(originalFileName);
+		String originalFileExtension = originalFileName.substring(originalFileName.lastIndexOf(".")).toLowerCase();
+		//확장자 검사로직
+		if(originalFileExtension.equals(".png")||originalFileExtension.equals(".jepg")||
+				originalFileExtension.equals(".jpg")||originalFileExtension.equals(".bmp")||
+				originalFileExtension.equals(".gif")){
+			result = true;
+		}
+		return result;
+	}
+
+	/**
+	 * 로그파일을 관리하는 프로세스
+	 * @param image : multifile, 현재 업로드한 파일
+	 * @return 파일 링크 혹은 error메시지
+	 */
+	public String logFileProcess(MultipartFile image) {
+		long filesize = image.getSize();
+		String originalFileName = image.getOriginalFilename();
+		String storedFileName = null;
+		if (filesize > MAX_FILE_SIZE) {
+			return "error : '첨부 파일은" + MAX_FILE_SIZE/(1024 * 1024) + "MB를 넘지 않도록 해주세요."; 
+		} 
+		
+		if (!isImageExten(originalFileName)) {
+			return "error : '지원하지 않는 확장자입니다. png를 권장하며, jpg, bmp, gif를 지원합니다.";
+		}
+		try {
+			storedFileName = uploadFile(originalFileName, image.getBytes());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		};
+		return storedFileName;
 	}
 
 }

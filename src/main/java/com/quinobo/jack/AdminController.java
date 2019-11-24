@@ -70,7 +70,7 @@ public class AdminController extends AdminBaseController implements Constants {
 
 	@RequestMapping(value = "/npcEdit", method = RequestMethod.POST)
 	public String edit_npc(String extra, Model model) {
-		NpcEntity npcEntity = bs.selectNpcDetail(extra, TABLE_NPC);
+		NpcEntity npcEntity = bs.selectNpcDetail(extra);
 		model.addAttribute("npcEntity", npcEntity);
 		model.addAttribute("uploadPath", fs.getUPLOAD_PATH());
 		return "admin/npc/npcEdit";
@@ -105,15 +105,7 @@ public class AdminController extends AdminBaseController implements Constants {
 	
 	@RequestMapping(value = "/del_npc", method = RequestMethod.POST)
 	public String npcDelete(String npno) {
-		
 		bs.deleteNPC(npno);
-		/**
-		 * 11/15 시험 준비에 착수해주세요.
-		 * 
-		 * npc끝!
-		 * 
-		 * 대화 올리는 창만들기. 로그창 생성!
-		 */
 		return "redirect:/unyonyazal/npc_Admin";
 	}
 
@@ -186,7 +178,7 @@ public class AdminController extends AdminBaseController implements Constants {
 		}
 		map.put("NAME", name);
 		map.put("MEMO", comment);
-		bs.insertNpc(map, TABLE_NPC);
+		bs.insertNpc(map);
 
 		return "redirect:/unyonyazal/npc_Admin";
 	}
