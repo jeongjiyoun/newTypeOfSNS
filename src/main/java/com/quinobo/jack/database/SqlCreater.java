@@ -55,7 +55,7 @@ public class SqlCreater implements Constants {
 		sb.append("'");
 		sb.append(" ) ");
 		sql = sb.toString();
-		//마지막에 일괄 로그로 대체
+		// 마지막에 일괄 로그로 대체
 		System.out.println(sql);
 		return sql;
 	}
@@ -82,7 +82,9 @@ public class SqlCreater implements Constants {
 			sb.append(tableFlag);
 			sb.append(" WHERE ");
 			sb.append("NPNO = ");
+			sb.append(orNo);
 			break;
+
 		case TABLE_LOG:
 			sb.append("BDNO, ");
 			sb.append("WCHAR, ");
@@ -91,19 +93,62 @@ public class SqlCreater implements Constants {
 			sb.append("OWNO ");
 			sb.append("FROM ");
 			sb.append(tableFlag);
-			sb.append(" ORDER BY ");
-			sb.append("BDNO ");
-			sb.append("DESC ");
-			sb.append("LIMIT 1");
+			if (orNo.equals("0")) {
+				sb.append(" ORDER BY ");
+				sb.append("BDNO DESC ");
+				sb.append("LIMIT 1 ");
+			} else {
+				sb.append(" WHERE ");
+				sb.append("BDNO = ");
+				sb.append(orNo);
+			}
 			break;
 
 		default:
 		}
-		sb.append(orNo);
-
 		sql = sb.toString();
 		System.out.println(sql);
 		return sql;
+	}
+
+	public String sqlLogBeforeAfterCreate(int curPage, String tableFlag, String pageFlag) {
+		String sql = null;
+		StringBuffer sb = new StringBuffer();
+		sb.append("SELECT ");
+		sb.append("BDNO, ");
+		sb.append("WCHAR, ");
+		sb.append("CONTENTS, ");
+		sb.append("DATE_FORMAT(WDATE, '%Y-%m-%d'), ");
+		sb.append("OWNO, ");
+		sb.append("CURPAGE ");
+
+		sb.append("FROM ");
+		sb.append("( ");
+		sb.append("SELECT ");
+		sb.append("BDNO, ");
+		sb.append("WCHAR, ");
+		sb.append("CONTENTS, ");
+		sb.append("WDATE, ");
+		sb.append("OWNO, ");
+		sb.append("@rownum := @rownum+1 AS CURPAGE ");
+		sb.append("FROM ");
+		sb.append(tableFlag);
+		sb.append(",(SELECT @rownum :=0) AS TEMP ");
+		sb.append("ORDER BY BDNO DESC");
+		sb.append(") AS BOARD ");
+		sb.append("WHERE ");
+		if(pageFlag.contains("after")) {
+			sb.append("CURPAGE = " + (curPage + 1));
+		} else {
+			sb.append("CURPAGE = " + (curPage - 1));
+		}
+		sb.append(" ORDER BY ");
+		sb.append("CURPAGE DESC ");
+		
+		sql = sb.toString();
+		System.out.println(sql);
+		return sql;
+
 	}
 
 	/**
@@ -117,6 +162,17 @@ public class SqlCreater implements Constants {
 		sb.append("SELECT ");
 		switch (map.get("tableFlag")) {
 		case TABLE_NPC:
+			sb.append(map.get("select"));
+			sb.append(" FROM ");
+			sb.append(map.get("tableFlag"));
+			if (map.get("keyword") != null) {
+				sb.append(" WHERE NAME Like ");
+				sb.append("'%");
+				sb.append(map.get("keyword"));
+				sb.append("%' ");
+			}
+			break;
+		case TABLE_LOG:
 			sb.append(map.get("select"));
 			sb.append(" FROM ");
 			sb.append(map.get("tableFlag"));
